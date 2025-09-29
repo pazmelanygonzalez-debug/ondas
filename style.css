@@ -64,12 +64,3 @@ input[type="number"] {
   border-radius: 4px;
   font-size: 1rem;
 }
-
-canvas {
-  display: block;
-  margin: 2rem auto;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.08);
-  border: 1px solid #e0e0e0;
-}
