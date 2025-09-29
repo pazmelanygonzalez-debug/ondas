@@ -14,6 +14,27 @@ const ecuacionesDiv = document.getElementById('ecuaciones-ondas');
 const colores = ['#1976d2', '#d32f2f', '#388e3c', '#fbc02d', '#7b1fa2', '#0097a7', '#c2185b', '#ffa000'];
 let colorIndex = 0;
 let ondas = [];
+let tiempoAnim = 1; // segundos por ciclo
+// Control de tiempo de animación
+const btnAnim = document.getElementById('toggle-anim');
+let animando = false;
+let animFrame = null;
+let t = 0;
+const inputTiempo = document.createElement('input');
+inputTiempo.type = 'number';
+inputTiempo.min = '0.1';
+inputTiempo.step = '0.1';
+inputTiempo.value = '2';
+inputTiempo.style.marginLeft = '12px';
+inputTiempo.style.width = '60px';
+const lblTiempo = document.createElement('label');
+lblTiempo.textContent = 'Segundos por ciclo:';
+lblTiempo.style.marginLeft = '18px';
+btnAnim.parentNode.insertBefore(lblTiempo, btnAnim);
+btnAnim.parentNode.insertBefore(inputTiempo, btnAnim);
+inputTiempo.addEventListener('input', () => {
+	tiempoAnim = parseFloat(inputTiempo.value) || 2;
+});
 
 // --- Sincronización automática de campos ---
 function actualizarCampos(campo) {
@@ -66,73 +87,112 @@ btnAgregar.addEventListener('click', () => {
 
 // --- Renderizar todas las ondas ---
 function renderOndas() {
-	canvasesDiv.innerHTML = '';
-	ecuacionesDiv.innerHTML = '';
-	ondas.forEach((onda, idx) => {
-		// Canvas
-		const canvas = document.createElement('canvas');
-		canvas.width = 800;
-		canvas.height = 200;
-		canvas.style.marginBottom = '24px';
-		canvas.style.background = '#fff';
-		canvas.style.borderRadius = '10px';
-		canvas.style.boxShadow = '0 2px 8px rgba(0,0,0,0.07)';
-		canvasesDiv.appendChild(canvas);
-		drawOnda(canvas, onda);
-		// Ecuación
-		const funcTxt = onda.funcion === 'cos' ? 'cos' : 'sin';
-		const eq = `y(x) = ${onda.A}·${funcTxt}(2π·${onda.f}·(x/${onda.v}))`;
-		const p = document.createElement('p');
-		p.innerHTML = `<span style="display:inline-block;width:16px;height:16px;background:${onda.color};border-radius:3px;margin-right:6px;"></span> <b>Onda ${idx+1}:</b> ${eq}`;
-		ecuacionesDiv.appendChild(p);
-	});
+		canvasesDiv.innerHTML = '';
+		ecuacionesDiv.innerHTML = '';
+		ondas.forEach((onda, idx) => {
+			// Canvas
+			const fila = document.createElement('div');
+			fila.style.display = 'flex';
+			fila.style.alignItems = 'center';
+			fila.style.marginBottom = '24px';
+			const canvas = document.createElement('canvas');
+			canvas.width = 800;
+			canvas.height = 200;
+			canvas.style.background = '#fff';
+			canvas.style.borderRadius = '10px';
+			canvas.style.boxShadow = '0 2px 8px rgba(0,0,0,0.07)';
+			// Botón borrar
+			const btnBorrar = document.createElement('button');
+			btnBorrar.textContent = 'Borrar';
+			btnBorrar.style.marginLeft = '18px';
+			btnBorrar.style.padding = '6px 14px';
+			btnBorrar.style.background = onda.color;
+			btnBorrar.style.color = '#fff';
+			btnBorrar.style.border = 'none';
+			btnBorrar.style.borderRadius = '6px';
+			btnBorrar.style.cursor = 'pointer';
+			btnBorrar.onclick = () => {
+				ondas.splice(idx, 1);
+				renderOndas();
+			};
+			fila.appendChild(canvas);
+			fila.appendChild(btnBorrar);
+			canvasesDiv.appendChild(fila);
+			drawOnda(canvas, onda, t);
+			// Ecuación
+			const funcTxt = onda.funcion === 'cos' ? 'cos' : 'sin';
+			const eq = `y(x) = ${onda.A}·${funcTxt}(2π·${onda.f}·(x/${onda.v}))`;
+			const p = document.createElement('p');
+			p.innerHTML = `<span style="display:inline-block;width:16px;height:16px;background:${onda.color};border-radius:3px;margin-right:6px;"></span> <b>Onda ${idx+1}:</b> ${eq}`;
+			ecuacionesDiv.appendChild(p);
+		});
 }
 
 // --- Dibujar una onda en su canvas ---
 function drawOnda(canvas, onda) {
-	const ctx = canvas.getContext('2d');
-	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	ctx.save();
-	// Ejes
-	ctx.strokeStyle = '#444';
-	ctx.lineWidth = 1.5;
-	ctx.beginPath(); ctx.moveTo(40, 100); ctx.lineTo(790, 100); ctx.stroke();
-	ctx.beginPath(); ctx.moveTo(50, 20); ctx.lineTo(50, 180); ctx.stroke();
-	ctx.fillStyle = '#222'; ctx.font = '14px Arial';
-	ctx.fillText('x', 780, 90);
-	ctx.fillText('y', 55, 30);
-	// Etiquetas de amplitud
-	ctx.fillStyle = onda.color;
-	ctx.font = '13px Arial';
-	ctx.fillText('+' + onda.A, 10, 100 - onda.A * 80 + 5);
-	ctx.fillText('-' + onda.A, 10, 100 + onda.A * 80 + 5);
-	ctx.strokeStyle = onda.color;
-	ctx.beginPath();
-	ctx.moveTo(45, 100 - onda.A * 80);
-	ctx.lineTo(55, 100 - onda.A * 80);
-	ctx.moveTo(45, 100 + onda.A * 80);
-	ctx.lineTo(55, 100 + onda.A * 80);
-	ctx.stroke();
-	// Onda
-	ctx.beginPath();
-	let faseInicial = 0;
-	// Para seno, no sumar fase: así inicia en (0,0)
-	for (let x = 0; x <= 740; x++) {
-		const xReal = x + 50;
-		let y;
-		const k = 2 * Math.PI / onda.l;
-		if (onda.funcion === 'cos') {
-			y = onda.A * 80 * Math.cos(k * x);
-		} else {
-			y = onda.A * 80 * Math.sin(k * x); // inicia en (0,0)
+		const ctx = canvas.getContext('2d');
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+		ctx.save();
+		// Ejes
+		ctx.strokeStyle = '#444';
+		ctx.lineWidth = 1.5;
+		ctx.beginPath(); ctx.moveTo(40, 100); ctx.lineTo(790, 100); ctx.stroke();
+		ctx.beginPath(); ctx.moveTo(50, 20); ctx.lineTo(50, 180); ctx.stroke();
+		ctx.fillStyle = '#222'; ctx.font = '14px Arial';
+		ctx.fillText('x', 780, 90);
+		ctx.fillText('y', 55, 30);
+		// Etiquetas de amplitud
+		ctx.fillStyle = onda.color;
+		ctx.font = '13px Arial';
+		ctx.fillText('+' + onda.A, 10, 100 - onda.A * 80 + 5);
+		ctx.fillText('-' + onda.A, 10, 100 + onda.A * 80 + 5);
+		ctx.strokeStyle = onda.color;
+		ctx.beginPath();
+		ctx.moveTo(45, 100 - onda.A * 80);
+		ctx.lineTo(55, 100 - onda.A * 80);
+		ctx.moveTo(45, 100 + onda.A * 80);
+		ctx.lineTo(55, 100 + onda.A * 80);
+		ctx.stroke();
+		// Onda animada
+		ctx.beginPath();
+		let faseInicial = 0;
+		for (let x = 0; x <= 740; x++) {
+			const xReal = x + 50;
+			let y;
+			const k = 2 * Math.PI / onda.l;
+			// t: tiempo animación
+			if (onda.funcion === 'cos') {
+				y = onda.A * 80 * Math.cos(k * x - 2 * Math.PI * onda.f * t / tiempoAnim);
+			} else {
+				y = onda.A * 80 * Math.sin(k * x - 2 * Math.PI * onda.f * t / tiempoAnim);
+			}
+			const yReal = 100 - y;
+			if (x === 0) ctx.moveTo(xReal, yReal);
+			else ctx.lineTo(xReal, yReal);
 		}
-		const yReal = 100 - y;
-		if (x === 0) ctx.moveTo(xReal, yReal);
-		else ctx.lineTo(xReal, yReal);
+		ctx.strokeStyle = onda.color;
+		ctx.lineWidth = 3;
+		ctx.globalAlpha = 1;
+		ctx.stroke();
+		ctx.restore();
+// Animación
+btnAnim.addEventListener('click', () => {
+	animando = !animando;
+	btnAnim.textContent = animando ? 'Detener animación' : 'Iniciar animación';
+	if (animando) {
+		t = 0;
+		animFrame = requestAnimationFrame(animarOndas);
+	} else {
+		cancelAnimationFrame(animFrame);
+		t = 0;
+		renderOndas();
 	}
-	ctx.strokeStyle = onda.color;
-	ctx.lineWidth = 3;
-	ctx.globalAlpha = 1;
-	ctx.stroke();
-	ctx.restore();
+});
+
+function animarOndas() {
+	t += 0.03;
+	renderOndas();
+	if (animando) animFrame = requestAnimationFrame(animarOndas);
 }
+}
+
