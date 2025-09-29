@@ -166,54 +166,56 @@ function renderOndas() {
 
 // --- Dibujar una onda en su canvas ---
 function drawOnda(canvas, onda) {
-				const ctx = canvas.getContext('2d');
-				ctx.clearRect(0, 0, canvas.width, canvas.height);
-				ctx.save();
-				// Zoom y desplazamiento
-				ctx.translate(offsetX, 0);
-				ctx.scale(zoom, 1);
-				// Ejes
-				ctx.strokeStyle = '#444';
-				ctx.lineWidth = 1.5;
-				ctx.beginPath(); ctx.moveTo(40, 100); ctx.lineTo(790, 100); ctx.stroke();
-				ctx.beginPath(); ctx.moveTo(50, 20); ctx.lineTo(50, 180); ctx.stroke();
-				ctx.fillStyle = '#222'; ctx.font = '14px Arial';
-				ctx.fillText('x', 780, 90);
-				ctx.fillText('y', 55, 30);
-				// Etiquetas de amplitud
-				ctx.fillStyle = onda.color;
-				ctx.font = '13px Arial';
-				ctx.fillText('+' + onda.A, 10, 100 - onda.A * 80 + 5);
-				ctx.fillText('-' + onda.A, 10, 100 + onda.A * 80 + 5);
-				ctx.strokeStyle = onda.color;
-				ctx.beginPath();
-				ctx.moveTo(45, 100 - onda.A * 80);
-				ctx.lineTo(55, 100 - onda.A * 80);
-				ctx.moveTo(45, 100 + onda.A * 80);
-				ctx.lineTo(55, 100 + onda.A * 80);
-				ctx.stroke();
-				// Onda animada
-				ctx.beginPath();
-				let faseInicial = 0;
-				for (let x = 0; x <= 740; x++) {
-					const xReal = x + 50;
-					let y;
-					const k = 2 * Math.PI / onda.l;
-					// t: tiempo animación
-					if (onda.funcion === 'cos') {
-						y = onda.A * 80 * Math.cos(k * x - 2 * Math.PI * onda.f * t / tiempoAnim);
-					} else {
-						y = onda.A * 80 * Math.sin(k * x - 2 * Math.PI * onda.f * t / tiempoAnim);
+					const ctx = canvas.getContext('2d');
+					ctx.clearRect(0, 0, canvas.width, canvas.height);
+					ctx.save();
+					// Zoom y desplazamiento (asegurar valores válidos)
+					zoom = typeof zoom === 'number' && !isNaN(zoom) ? zoom : 1;
+					offsetX = typeof offsetX === 'number' && !isNaN(offsetX) ? offsetX : 0;
+					ctx.translate(offsetX, 0);
+					ctx.scale(zoom, 1);
+					// Ejes
+					ctx.strokeStyle = '#444';
+					ctx.lineWidth = 1.5;
+					ctx.beginPath(); ctx.moveTo(40, 100); ctx.lineTo(790, 100); ctx.stroke();
+					ctx.beginPath(); ctx.moveTo(50, 20); ctx.lineTo(50, 180); ctx.stroke();
+					ctx.fillStyle = '#222'; ctx.font = '14px Arial';
+					ctx.fillText('x', 780, 90);
+					ctx.fillText('y', 55, 30);
+					// Etiquetas de amplitud
+					ctx.fillStyle = onda.color;
+					ctx.font = '13px Arial';
+					ctx.fillText('+' + onda.A, 10, 100 - onda.A * 80 + 5);
+					ctx.fillText('-' + onda.A, 10, 100 + onda.A * 80 + 5);
+					ctx.strokeStyle = onda.color;
+					ctx.beginPath();
+					ctx.moveTo(45, 100 - onda.A * 80);
+					ctx.lineTo(55, 100 - onda.A * 80);
+					ctx.moveTo(45, 100 + onda.A * 80);
+					ctx.lineTo(55, 100 + onda.A * 80);
+					ctx.stroke();
+					// Onda animada
+					ctx.beginPath();
+					let faseInicial = 0;
+					for (let x = 0; x <= 740; x++) {
+						const xReal = x + 50;
+						let y;
+						const k = 2 * Math.PI / onda.l;
+						// t: tiempo animación
+						if (onda.funcion === 'cos') {
+							y = onda.A * 80 * Math.cos(k * x - 2 * Math.PI * onda.f * t / tiempoAnim);
+						} else {
+							y = onda.A * 80 * Math.sin(k * x - 2 * Math.PI * onda.f * t / tiempoAnim);
+						}
+						const yReal = 100 - y;
+						if (x === 0) ctx.moveTo(xReal, yReal);
+						else ctx.lineTo(xReal, yReal);
 					}
-					const yReal = 100 - y;
-					if (x === 0) ctx.moveTo(xReal, yReal);
-					else ctx.lineTo(xReal, yReal);
-				}
-				ctx.strokeStyle = onda.color;
-				ctx.lineWidth = 3;
-				ctx.globalAlpha = 1;
-				ctx.stroke();
-				ctx.restore();
+					ctx.strokeStyle = onda.color;
+					ctx.lineWidth = 3;
+					ctx.globalAlpha = 1;
+					ctx.stroke();
+					ctx.restore();
 // Animación
 btnAnim.addEventListener('click', () => {
 	animando = !animando;
